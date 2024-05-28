@@ -1,4 +1,4 @@
-./allDf/
-./savedData/
-./tempFiles/
+allDf/
+savedData/
+tempFiles/
 *.csv
