@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Question Answering Dataset Creator</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <style>
         .question-answer-row {
             display: flex;
@@ -13,28 +15,57 @@
             flex: 1;
             margin-right: 10px;
         }
-        body{
+
+        body {
             padding: 20px;
         }
+
         #page-count {
             position: absolute;
             top: 20px;
             right: 20px;
             font-weight: bold;
         }
+
+        .page-count-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .page-count-input,
+        .page-count-button,
+        .page-count-text {
+            margin-right: 10px;
+            /* Adjust the spacing as needed */
+        }
     </style>
 </head>
+
 <body>
     <h1>Question Answering Dataset</h1>
-    <div id="page-count"><p>{{ currentIdx }} ----  {{ endIdx }}</p></div>
+    <div id="page-count" class="page-count-container">
+        <textarea rows="1" cols="10" id="jumpToTA" class="page-count-input"></textarea>
+        <button id="jump-btn" class="page-count-button">jump</button>
+        <p class="page-count-text">{{ currentIdx }} - {{ endIdx }}</p>
+    </div>
     <p>{{ text }}</p>
+
 
     <form id="question-answer-form" method="post">
         {% for i in range(questions_answers.question|length) %}
-            <div class="question-answer-row">
-                <input class="form-control" type="text" name="question" value="{{ questions_answers.question[i] }}" placeholder="Enter question">
-                <input class="form-control" type="text" name="answer" value="{{ questions_answers.answer[i] }}" placeholder="Enter answer">
-            </div>
+        <div class="question-answer-row">
+            {% if i < questions_answers.question|length %} <input class="form-control" type="text" name="question"
+                value="{{ questions_answers.question[i] }}" placeholder="Enter question">
+                {% else %}
+                <input class="form-control" type="text" name="question" placeholder="Enter question">
+                {% endif %}
+
+                {% if i < questions_answers.answer|length %} <input class="form-control" type="text" name="answer"
+                    value="{{ questions_answers.answer[i] }}" placeholder="Enter answer">
+                    {% else %}
+                    <input class="form-control" type="text" name="answer" placeholder="Enter answer">
+                    {% endif %}
+        </div>
         {% endfor %}
         <div class="question-answer-row">
             <input class="form-control" type="text" name="question" placeholder="Enter question">
@@ -50,10 +81,10 @@
         const addRowBtn = document.getElementById('add-row');
         const nextBtn = document.getElementById('next-btn');
         const prevBtn = document.getElementById('prev-btn');
-
         const form = document.getElementById('question-answer-form');
+        const jumpBtn = document.getElementById('jump-btn');
 
-        
+
         addRowBtn.addEventListener('click', () => {
             const row = document.createElement('div');
             row.classList.add('question-answer-row');
@@ -71,7 +102,7 @@
             rows.forEach(row => {
                 const questionInput = row.querySelector('input[name="question"]');
                 const answerInput = row.querySelector('input[name="answer"]');
-                
+
                 // Check if both inputs exist and have values
                 if (questionInput && answerInput && questionInput.value.trim() && answerInput.value.trim()) {
                     inputValues.push({
@@ -88,7 +119,7 @@
             const formData = new FormData(form);
             const data = {};
             for (const [key, value] of formData.entries()) {
-                if(key != "" && value != ""){
+                if (key != "" && value != "") {
                     if (!data[key]) {
                         data[key] = [];
                     }
@@ -103,7 +134,7 @@
                     formData.append(key, decodeURIComponent(value));
                 }
                 console.log(formData);
-                return fetch('http://192.168.10.92:5035/{{ name }}', {
+                return fetch('http://192.168.10.92:5000/{{ name }}?session_id={{ ssID }}', {
                     method: 'POST',
                     body: formData,
                 });
@@ -111,15 +142,30 @@
 
             await Promise.all(requests);
 
-            fetch('http://192.168.10.92:5035/next/{{ name }}', {
+            fetch('http://192.168.10.92:5000/next/{{ name }}?session_id={{ ssID }}', {
                 method: 'POST',
             }).then(() => {
                 window.location.reload();
             });
         });
+        
+        jumpBtn.addEventListener('click', async () => {
+            const jumpToNo = document.getElementById('jumpToTA').value;
+            const url = `http://192.168.10.92:5000/jump/{{ name }}?session_id={{ ssID }}&jumpToNo=${jumpToNo}`;
+
+            fetch(url, {
+                method: 'POST',
+            })
+                .then(() => {
+                window.location.reload(); // Handle response successfully
+                })
+                .catch((error) => {
+                console.error('Error:', error);
+                });
+        });
 
         prevBtn.addEventListener('click', async () => {
-            fetch('http://192.168.10.92:5035/prev/{{ name }}', {
+            fetch('http://192.168.10.92:5000/prev/{{ name }}?session_id={{ ssID }}', {
                 method: 'POST',
             }).then(() => {
                 window.location.reload();
@@ -127,11 +173,12 @@
             }).catch((error) => {
                 console.error('Error:', error);
             });
-            
+
         });
 
 
 
     </script>
 </body>
+
 </html>

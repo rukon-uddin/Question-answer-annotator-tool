@@ -8,10 +8,57 @@
 </head>
 <body>
     {% for f in df %}
-    <a href="http://192.168.10.92:5035/{{ f }}"><p class="btn btn-danger" style="margin: 10px;">{{ f }}</p></a>
+    <a href="http://192.168.10.92:5000/{{ f }}?session_id={{ uniqueTabId }}"><p class="btn btn-danger" style="margin: 10px;">{{ f }}</p></a>
     {% endfor %}
-    
+    <p>Totoal Question and answers: {{ total_qa }}</p>
+    <p>Totoal paragraphs: {{ total_para }}</p>
+    <!-- <p>{{chunkDetails}}</p> -->
+    <ul>
+        {% for key, value in chunkDetails.items() %}
+          <li>
+            <strong>{{ key }}</strong>
+            <ul>
+              {% for k, v in value.items() %}
+                <li>{{ k }}: {{ v }}</li>
+              {% endfor %}
+            </ul>
+          </li>
+        {% endfor %}
+    </ul>
+
+    <script>
+        function generateUniqueId() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        let uniqueTabId = sessionStorage.getItem('uniqueTabId');
+
+        if (!uniqueTabId) {
+            uniqueTabId = generateUniqueId();
+            sessionStorage.setItem('uniqueTabId', uniqueTabId);
+        }
+
+        console.log(uniqueTabId);
+        fetch('/set_session_id', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ sessionId: uniqueTabId })
+            })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error('Error:', error));
+            
+        // Include the session ID in the links
+        document.querySelectorAll('a').forEach(a => {
+            const href = new URL(a.href);
+            href.searchParams.set('session_id', uniqueTabId);
+            a.href = href.toString();
+        });
+    </script>
 </body>
 </html>
-
-
